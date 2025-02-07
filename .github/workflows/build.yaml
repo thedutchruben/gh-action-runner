@@ -1,36 +1,54 @@
-name: Build and Publish Runner
+name: Create and publish a Docker image
 
+# Configures this workflow to run every time a change is pushed to the branch called `release`.
 on:
   push:
-    branches: [ master ]
-    paths:
-      - 'Dockerfile'
-      - 'start.sh'
-      - '.github/workflows/build-runner.yml'
+    branches:
+      - master
   workflow_dispatch:
 
+# Defines two custom environment variables for the workflow. These are used for the Container registry domain, and a name for the Docker image that this workflow builds.
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+# There is a single job in this workflow. It's configured to run on the latest available version of Ubuntu.
 jobs:
-  build-and-push:
+  build-and-push-image:
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
     runs-on: ubuntu-latest
-    
+    # Sets the permissions granted to the `GITHUB_TOKEN` for the actions in this job.
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+      #
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@9780b0c442fbb1117ed29e0efdff1e18412f7567
         with:
-          registry: ghcr.io
+          registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@0de3687b53cd804b63dd87819f7bda043569ce4a
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=sha
       - name: Build and push Docker image
         id: push
         uses: docker/build-push-action@4f58ea79222b3b9dc2c8bbdd6debcef730109a75
         with:
           context: .
           push: true
-          tags: master
-          labels: master
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
