@@ -3,10 +3,10 @@ FROM ubuntu:22.04
 ENV DEBIAN_FRONTEND=noninteractive
 
 RUN apt-get update && apt-get install -y \
-   curl wget git jq tar unzip zip sudo \
-   software-properties-common build-essential \
-   ca-certificates gnupg \
-   && rm -rf /var/lib/apt/lists/*
+    curl wget git jq tar unzip zip sudo \
+    software-properties-common build-essential \
+    ca-certificates gnupg docker.io \
+    && rm -rf /var/lib/apt/lists/*
 
 RUN useradd -m ghactions && \
    echo "ghactions ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
