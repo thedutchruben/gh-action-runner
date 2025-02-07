@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  github-runner:
+    image: ghcr.io/${ORGANIZATION}/${REPO}/github-runner:latest
+    restart: unless-stopped
+    environment:
+      - ORGANIZATION=${ORGANIZATION}
+      - REPO=${REPO}
+      - ACCESS_TOKEN=${ACCESS_TOKEN}
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - runner-data:/home/actions-runner/_work
+
+volumes:
+  runner-data:
