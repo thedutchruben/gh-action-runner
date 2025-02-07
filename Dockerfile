@@ -1,36 +1,24 @@
 FROM ubuntu:22.04
 
-# Prevent interactive prompts during package installation
 ENV DEBIAN_FRONTEND=noninteractive
 
-
-# Install essential packages
 RUN apt-get update && apt-get install -y \
-    curl \
-    wget \
-    git \
-    jq \
-    tar \
-    unzip \
-    zip \
-    sudo \
-    software-properties-common \
-    docker.io \
-    openjdk-17-jdk \
-    build-essential \
-    ca-certificates \
-    gnupg \
+    curl wget git jq tar unzip zip sudo \
+    software-properties-common build-essential \
+    ca-certificates gnupg \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -o actions-runner-linux-x64-2.322.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-linux-x64-2.322.0.tar.gz
+# Create user and add to sudo/docker groups
+RUN useradd -m ghactions && \
+    echo "ghactions ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+    usermod -aG docker ghactions
 
-RUN tar xzf ./actions-runner-linux-x64-2.322.0.tar.gz
+RUN curl -o actions-runner-linux-x64-2.322.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-linux-x64-2.322.0.tar.gz && \
+    tar xzf ./actions-runner-linux-x64-2.322.0.tar.gz
 
 WORKDIR /app
-
-# Copy the startup script
 COPY start.sh .
+RUN chown -R ghactions:ghactions /app
 
 USER ghactions
-
 CMD ["bash","start.sh"]
