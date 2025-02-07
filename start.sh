@@ -7,5 +7,5 @@ fi
 
 echo "Configuring GitHub Actions Runner..."
 
-./config.sh --url "$REPO" --token "$ACCESS_TOKEN"
+./config.sh --url $REPO --token $ACCESS_TOKEN
 ./run.sh
