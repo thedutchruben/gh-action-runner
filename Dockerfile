@@ -2,16 +2,33 @@ FROM ubuntu:22.04
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# Install dependencies
 RUN apt-get update && apt-get install -y \
    curl wget git jq tar unzip zip sudo \
    software-properties-common build-essential \
-   ca-certificates gnupg docker.io \
-   && rm -rf /var/lib/apt/lists/*
+   ca-certificates gnupg lsb-release
 
+# Add Docker's official GPG key
+RUN mkdir -p /etc/apt/keyrings && \
+   curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg
+
+# Set up Docker repository
+RUN echo \
+   "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+   $(lsb_release -cs) stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+# Install Docker
+RUN apt-get update && \
+   apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin && \
+   rm -rf /var/lib/apt/lists/*
+
+# Setup user
 RUN useradd -m ghactions && \
    echo "ghactions ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers && \
+   groupadd -f docker && \
    usermod -aG docker ghactions
 
+# Setup GitHub runner
 WORKDIR /app
 RUN curl -o actions-runner-linux-x64-2.322.0.tar.gz -L https://github.com/actions/runner/releases/download/v2.322.0/actions-runner-linux-x64-2.322.0.tar.gz && \
    tar xzf ./actions-runner-linux-x64-2.322.0.tar.gz && \
